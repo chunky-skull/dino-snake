@@ -106,39 +106,11 @@ function hbvget(obj,osv)
 		y2=(obj.y+osv.y2)+obj.vy,
 	}
 end
---set move off set vector
---function setmvofv()
-	--mvset.lrun.ofv={
-			--x1=-1,
-			--y1=0,
-			--x2=-1,
-			--y2=char.h
-		--}
-	--mvset.rrun.ofv={
-			--x1=char.w+1,
-			--y1=0,
-			--x2=char.w+1,
-			--y2=char.h
-		--}
-	--mvset.urun.ofv={
-			--x1=0,
-			--y1=-1,
-			--x2=char.w,
-			--y2=-1
-		--}
-	--mvset.drun.ofv={
-			--x1=0,
-			--y1=char.h+1,
-			--x2=char.w,
-			--y2=char.h+1
-		--}
---end
 function mvcon(--move constructor
 	lbl,--label
 	snum,--sprite number
 	vaxs,--velocity access
 	vdir,--velocity direction
-	--hbv,--hitbox vector
 	flp--flip, optional
 	)
 	return{
@@ -215,49 +187,25 @@ mvset={--move set states
 		"0",
 		"vx",
 		-1,
-		--{
-			--x1=-1,
-			--y1=0,
-			--x2=0,
-			--y2=char.h
-		--},
 		true
 	),
 	rrun=mvcon(
 		"rrun",
 		"4",
 		"vx",
-		1--,
-		--{
-			--x1=char.w-1,
-			--y1=0,
-			--x2=char.w,
-			--y2=char.h
-		--}
+		1
 	),
 	urun=mvcon(
 		"urun",
 		"8",
 		"vy",
-		-1--,
-		--{
-			--x1=0,
-			--y1=1,
-			--x2=char.w-2,
-			--y2=0
-		--}
+		-1
 	),
 	drun=mvcon(
 		"drun",
 		"12",
 		"vy",
-		1--,
-		--{
-			--x1=0,
-			--y1=char.h-1,
-			--x2=char.w-1,
-			--y2=char.h-2
-		--}
+		1
 	)
 }
 --life cycle
@@ -288,8 +236,8 @@ function lstgcon(
 			char.ani=ani
 			char.h=h
 			char.w=w
-			--msg=char.h/8
-			--setmvofv()
+			char.w=w
+				--set appropraite food type
 		end,
 		exit=function()
 			lfcy.stg=lfcy[nxt]
@@ -456,10 +404,15 @@ function ismpcol(x1,y1,h,w)
 	or fget(mget(x2,y2),mflg)
 end
 -->8
---food
+---food
 
 --forage, food available to player
-frg={}
+frg={
+	hch="bugs,liz,mice",
+	juv="liz,mice,hch",
+	ado="juv,hch",
+	adt="ado,juv",
+}
 --forage minium
 fmin=3
 
