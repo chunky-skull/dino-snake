@@ -96,16 +96,6 @@ end
 -->8
 --state machine
 	--moveset state machine
-	--get current hitbox vector
-function hbvget(obj,osv)
-	--object --offset vector
-	return {
-		x1=(obj.x+osv.x1)+obj.vx,
-		y1=(obj.y+osv.y1)+obj.vy,
-		x2=(obj.x+osv.x2)+obj.vx,
-		y2=(obj.y+osv.y2)+obj.vy,
-	}
-end
 function mvcon(--move constructor
 	lbl,--label
 	snum,--sprite number
@@ -115,12 +105,10 @@ function mvcon(--move constructor
 	)
 	return{
 		lbl=lbl,
-		--ofv=hbv,
 		update=function()
 			print(lbl)
 			char[vaxs]+=(char.acc*vdir)
 			char[vaxs]=vlimit(char[vaxs],char.vmax)
-			--char.hbv=hbvget(char,mvset[lbl].ofv) 
 		end,
 		enter=function()
 			--char.hbv=mvset[lbl].ofv
@@ -144,17 +132,12 @@ function mvprog(i)--move progress
 end
 function iget()--input collector
 	local i="idl"--input
-	if btn(0)then
-		i="lrun"
-	elseif btn(1)then
-		i="rrun"
-	elseif btn(2)then
-		i="urun"
-	elseif btn(3)then
-		i="drun"
-	elseif btn(4)then
-		i="eat"
-	end return i
+	if btn(0)then i="lrun" end
+	if btn(1)then i="rrun" end
+	if btn(2)then i="urun" end
+	if btn(3)then i="drun" end
+	if btn(4)then i="eat" end
+	return i
 end
 function upmvset()--update moveset
 	mvprog(iget())
@@ -238,6 +221,10 @@ function lstgcon(
 			char.w=w
 			char.w=w
 				--set appropraite food type
+					--a string of keys to a
+					--table of food type tables
+					--setforagetype("bugs,lizard,mice")
+					--fds={type={spritenumber=0}}
 		end,
 		exit=function()
 			lfcy.stg=lfcy[nxt]
@@ -247,15 +234,50 @@ end
 --life cycle
 lfcy={
 	stg=nil,--current life stage
-	egg=lstgcon("egg","hch","0",4,4,0),
+	egg=lstgcon(
+		"egg",
+		"hch",
+		"0",
+		4,
+		4,
+		0
+	),
 	--hatchling
-	hch=lstgcon("hch","juv","0",4,4,100),
+	hch=lstgcon(
+		"hch",
+		"juv",
+		"0",
+		4,
+		4,
+		100
+	),
 	--juvenile
-	juv=lstgcon("juv","ado","0",8,8,20),
+	juv=lstgcon(
+		"juv",
+		"ado",
+		"0",
+		8,
+		8,
+		20
+	),
 	--adolescence
-	ado=lstgcon("ado","adt","0",16,16,30),
+	ado=lstgcon(
+		"ado",
+		"adt",
+		"0",
+		16,
+		16,
+		30
+	),
 	--adult
-	adt=lstgcon("adt","egg","0",32,32,1000),
+	adt=lstgcon(
+		"adt",
+		"egg",
+		"0",
+		32,
+		32,
+		1000
+	),
 }
 --update lifecyle
 function uplfcy()
@@ -273,6 +295,16 @@ end
 
 -->8
 --functions
+	--get current hitbox vector
+function hbvget(obj,osv)
+	--object --offset vector
+	return {
+		x1=(obj.x+osv.x1)+obj.vx,
+		y1=(obj.y+osv.y1)+obj.vy,
+		x2=(obj.x+osv.x2)+obj.vx,
+		y2=(obj.y+osv.y2)+obj.vy,
+	}
+end
 function pys(obj,vk,hbv)--physics
 	--vk veolcity key
 	obj[vk]*=frc
@@ -281,6 +313,8 @@ function pys(obj,vk,hbv)--physics
 end
 --move and slide
 function mvsld(obj)
+	--obj.vx*=frc
+	--obj.vy*=frc
 	local hbv
 	if obj.vx<0 then
 		hbv={
@@ -443,9 +477,8 @@ function isfrgcol(f)
 	or char.y>f.y+f.h
 	or f.x>char.x+char.w
 	or char.x>f.x+f.w then
-	return false 
+		return false
 	end
-	print("hit!")
 	return true
 end
 --on forage collision
@@ -490,7 +523,7 @@ function drwfrg()
 	end
 end
 -->8
---pathfinding
+---pathfinding
 
 function mkmap(d)
 	--d default value
