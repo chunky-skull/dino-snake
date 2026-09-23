@@ -6,6 +6,7 @@ scenter=64--screen center
 frc=0.85--friction
 fflg=2--food flag
 mflg=1--map flag
+actfrg={}--active forage
 --dev
 msg=""
 
@@ -22,6 +23,7 @@ end
 
 function _draw()
 	cls()
+	print(msg)
 	map()
 	print(char.p)
 	upchar()
@@ -29,7 +31,6 @@ function _draw()
 	upfrg()
 	uplfcy()
 	drwfrg()
-	print(msg)
 	--camera(char.x-scenter+(char.w/2),char.y-scenter+(char.h/2))
 end
 -->8
@@ -220,6 +221,8 @@ function lstgcon(
 			char.h=h
 			char.w=w
 			char.w=w
+			actfrg=split("bug,rdt,lzd")
+			--msg= #actfrg
 				--set appropraite food type
 					--a string of keys to a
 					--table of food type tables
@@ -313,8 +316,6 @@ function pys(obj,vk,hbv)--physics
 end
 --move and slide
 function mvsld(obj)
-	--obj.vx*=frc
-	--obj.vy*=frc
 	local hbv
 	if obj.vx<0 then
 		hbv={
@@ -374,15 +375,23 @@ function iscol(hbv,flg)
 		7
 	)
 	--x1 y1 top left corner
-	if fget(mget(x1,y1),flg)
+	if fget(mget(x1,y1),flg) then
+		return true 
+	end
 	--x1 y2 bottom left corner
-	or fget(mget(x1,y2),flg)
+	if fget(mget(x1,y2),flg) then
+		return true 
+	end
 	--x2 y1 top right corner
-	or fget(mget(x2,y1),flg)
+	if fget(mget(x2,y1),flg) then
+		return true 
+	end
 	--x2 y2 bottom right corner
-	or fget(mget(x2,y2),flg)then
+	if fget(mget(x2,y2),flg) then
 		return true
 	end
+		--return true
+	--end
 	local xtl=(hbv.x2-hbv.x1)/8
 	local ytl=(hbv.y2-hbv.y1)/8
 	local lp=0
@@ -441,11 +450,61 @@ end
 ---food
 
 --forage, food available to player
-frg={
-	hch="bugs,liz,mice",
-	juv="liz,mice,hch",
-	ado="juv,hch",
-	adt="ado,juv",
+function frgcon(x,y,h,w,pnt,ani)
+	return {
+		x=x,
+		y=y,
+		h=h,
+		w=w,
+		pnt=pnt,
+		ani=ani
+	}
+end
+
+--ingame forage
+frg={}
+
+frgtyp={
+	bug=frgcon(
+		0,
+		0,
+		8,
+		8,
+		1,
+		32
+	),
+	lzd=frgcon(
+		0,
+		0,
+		8,
+		8,
+		1,
+		32
+	),
+	rdt=frgcon(
+		0,
+		0,
+		8,
+		8,
+		1,
+		32
+	),
+	scv=frgcon(
+		0,
+		0,
+		8,
+		8,
+		1,
+		32
+	),
+	egg=frgcon(
+		0,
+		0,
+		8,
+		8,
+		1,
+		32
+	),
 }
 --forage minium
 fmin=3
@@ -461,10 +520,6 @@ function upfrg()
 end
 --is forage collision
 function isfrgcol(f)
-	--f.x left
-	--f.y top
-	--f.x+f.w right
-	--f.y+f.h bottom
 	--dev
 	rectfill(
 		f.x,
@@ -494,16 +549,15 @@ function frgspwn()
 		while l>0 do
 			local fx=flr(rnd(120))
 			local fy=flr(rnd(120))
+			local i=mid(1,flr(rnd(#actfrg+1)),#actfrg)
+			local fk=actfrg[i]
+			local fd=frgtyp[fk]
+			fd.x=fx
+			fd.y=fy
 			if not ismpcol(fx,fy,8,8) then
 				add(
 					frg,
-					{
-						x=fx,
-						y=fy,
-						h=8,
-						w=8,
-						snum=32
-					}
+					fd
 				)
 				l-=1
 			end
@@ -514,7 +568,7 @@ end
 function drwfrg()
 	for f in all(frg) do
 		spr(
-			f.snum,
+			f.ani,
 			f.x,
 			f.y,
 			1,
