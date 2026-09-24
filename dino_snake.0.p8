@@ -221,7 +221,7 @@ function lstgcon(
 			char.h=h
 			char.w=w
 			char.w=w
-			actfrg=split("bug,rdt,lzd")
+			actfrg=split("bug,bug,rdt,lzd")
 			--msg= #actfrg
 				--set appropraite food type
 					--a string of keys to a
@@ -450,10 +450,8 @@ end
 ---food
 
 --forage, food available to player
-function frgcon(x,y,h,w,pnt,ani)
+function frgcon(h,w,pnt,ani)
 	return {
-		x=x,
-		y=y,
 		h=h,
 		w=w,
 		pnt=pnt,
@@ -466,40 +464,30 @@ frg={}
 
 frgtyp={
 	bug=frgcon(
-		0,
-		0,
 		8,
 		8,
 		1,
 		32
 	),
 	lzd=frgcon(
-		0,
-		0,
 		8,
 		8,
 		1,
 		32
 	),
 	rdt=frgcon(
-		0,
-		0,
 		8,
 		8,
 		1,
 		32
 	),
 	scv=frgcon(
-		0,
-		0,
 		8,
 		8,
 		1,
 		32
 	),
 	egg=frgcon(
-		0,
-		0,
 		8,
 		8,
 		1,
@@ -547,17 +535,25 @@ function frgspwn()
 	local l=fmin
 	if #frg<fmin then
 		while l>0 do
-			local fx=flr(rnd(120))
-			local fy=flr(rnd(120))
+			local tx=flr(rnd(16))
+			local ty=flr(rnd(16))
+			local fx=tx*8
+			local fy=ty*8
 			local i=mid(1,flr(rnd(#actfrg+1)),#actfrg)
 			local fk=actfrg[i]
 			local fd=frgtyp[fk]
-			fd.x=fx
-			fd.y=fy
 			if not ismpcol(fx,fy,8,8) then
 				add(
 					frg,
-					fd
+					{
+						x=fx,
+						y=fy,
+						h=fd.h,
+						w=fd.w,
+						ani=fd.ani,
+						pt=fd.pt,
+						lbl=fk
+					}
 				)
 				l-=1
 			end
@@ -567,6 +563,7 @@ end
 
 function drwfrg()
 	for f in all(frg) do
+		print(f.lbl,f.x,f.y,10)
 		spr(
 			f.ani,
 			f.x,
@@ -575,6 +572,32 @@ function drwfrg()
 			1
 		)
 	end
+end
+-->8
+--enemies
+nme={}
+nmemin=1
+
+function nmecon()
+	return {
+		x=0,
+		y=0,
+		h=0,
+		w=0,
+		w=0,
+		vx=0,
+		vy=0,
+		vmax=0,
+		lfst="",
+		ani=""
+	}
+end
+
+function nmespwn()
+end
+function upnme()
+end
+function drwnme()
 end
 -->8
 ---pathfinding
