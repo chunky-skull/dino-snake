@@ -94,25 +94,29 @@ end
 function mv_ch(i)--move character
 	pys(ch)
 	for mv in pairs(ch.st) do
-		ch.st[mv]=false
+		--ch.st[mv]=false
 		if(mv==i)then
-			ch.st[mv] = true
+			--ch.st[mv] = true
 			if(mv=="eat")then
 				--eat
 			end
 			if(mv=="rn_l")then
 				rn_l()
+				return
 			elseif(mv=="rn_r")then
 				rn_r()
+				return
 			elseif(mv=="rn_u") then
 				rn_u()
+				return
 			elseif(mv=="rn_d")then
 				rn_d()
+				return
 			end
 		end
 	end
-	ch.x+=ch.dx
-	ch.y+=ch.dy
+	--ch.x+=ch.dx
+	--ch.y+=ch.dy
 end
 
 function rn_l()
@@ -209,10 +213,10 @@ function pys(g_o)--physics
 end
 --is collision
 function is_col(hb_v,flg)
-	local x1=hb_v.x1/8
-	local x2=hb_v.x2/8
-	local y1=hb_v.y1/8
-	local y2=hb_v.y2/8
+	local x1=flr(hb_v.x1/8)
+	local x2=flr(hb_v.x2/8)
+	local y1=flr(hb_v.y1/8)
+	local y2=flr(hb_v.y2/8)
 	--dev
 	rectfill(
 		hb_v.x1,

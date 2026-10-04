@@ -8,7 +8,7 @@ fflg=2--food flag
 mflg=1--map flag
 actfrg={}--active forage
 --dev
-msg=""
+log=""
 
 function _init()
 	inichar()
@@ -23,14 +23,17 @@ end
 
 function _draw()
 	cls()
-	print(msg)
+	if (log!="") ?log
+	upchar()
+	--upfrg()
+	upnme()
+	uplfcy()
 	map()
 	print(char.p)
-	upchar()
+	drwnme()
 	drwchar()
-	upfrg()
-	uplfcy()
-	drwfrg()
+	--drwfrg()
+	--ray(char)
 	--camera(char.x-scenter+(char.w/2),char.y-scenter+(char.h/2))
 end
 -->8
@@ -38,6 +41,7 @@ end
 
 char={
 	mv,--state
+	a=1.0,--angel
 	lfs=0,--life stage
 	x=0,
 	y=0,
@@ -49,12 +53,6 @@ char={
 	vmax=3,--velocity max
 	p=0,
 	grwnum=0,
-	--hbv={
-		--x1=0,
-		--y1=0,
-		--x2=0,
-		--y2=0
-	--},
 	--animation
 	ani="0,1,2,3",
 	flp=false--flip
@@ -102,14 +100,17 @@ function mvcon(--move constructor
 	snum,--sprite number
 	vaxs,--velocity access
 	vdir,--velocity direction
-	flp--flip, optional
+	flp,--flip, optional
+	a--angel
 	)
+	if (a==nil) a=1
 	return{
 		lbl=lbl,
 		update=function()
 			print(lbl)
 			char[vaxs]+=(char.acc*vdir)
 			char[vaxs]=vlimit(char[vaxs],char.vmax)
+			char.a = a
 		end,
 		enter=function()
 			--char.hbv=mvset[lbl].ofv
@@ -133,11 +134,11 @@ function mvprog(i)--move progress
 end
 function iget()--input collector
 	local i="idl"--input
-	if btn(0)then i="lrun" end
-	if btn(1)then i="rrun" end
-	if btn(2)then i="urun" end
-	if btn(3)then i="drun" end
-	if btn(4)then i="eat" end
+	if (btn(0)) i="lrun"
+	if (btn(1)) i="rrun"
+	if (btn(2)) i="urun"
+	if (btn(3)) i="drun"
+	if (btn(4)) i="eat"
 	return i
 end
 function upmvset()--update moveset
@@ -252,15 +253,15 @@ lfcy={
 		"0",
 		4,
 		4,
-		100
+		10
 	),
 	--juvenile
 	juv=lstgcon(
 		"juv",
 		"ado",
 		"0",
-		8,
-		8,
+		7,
+		7,
 		20
 	),
 	--adolescence
@@ -298,6 +299,20 @@ end
 
 -->8
 --functions
+--raycast
+function ray(obj,scrx)
+	if (scrx==nil) scrx=1
+	local raya=
+		obj.a+0.125-0.25*scrx/128
+	local rayvx,rayvy=
+		cos(raya),sin(raya)
+	line(
+		obj.x,obj.y,
+		obj.x+rayvx*64,
+		obj.y+rayvy*64,
+		8+scrx%8
+	)
+end
 	--get current hitbox vector
 function hbvget(obj,osv)
 	--object --offset vector
@@ -316,7 +331,9 @@ function pys(obj,vk,hbv)--physics
 end
 --move and slide
 function mvsld(obj)
-	local hbv
+	--obj.x*=frc
+	--obj.y*=frc
+	local hbv={}
 	if obj.vx<0 then
 		hbv={
 			x1=-1,
@@ -362,10 +379,10 @@ function mvsld(obj)
 end
 --is collison
 function iscol(hbv,flg)
-	local x1=hbv.x1/8
-	local x2=hbv.x2/8
-	local y1=hbv.y1/8
-	local y2=hbv.y2/8
+	local x1=flr(hbv.x1/8)
+	local x2=flr(hbv.x2/8)
+	local y1=flr(hbv.y1/8)
+	local y2=flr(hbv.y2/8)
 	--dev
 	rectfill(
 		hbv.x1,
@@ -394,33 +411,29 @@ function iscol(hbv,flg)
 	--end
 	local xtl=(hbv.x2-hbv.x1)/8
 	local ytl=(hbv.y2-hbv.y1)/8
-	local lp=0
 	local cx=x1
 	local cy=y1
 	if xtl>1 then
-		--msg="xtl triggered: "..char.w
-		while lp!=xtl do
+		for lp=0,xtl do
 			if fget(mget(cx,y1),flg)
 			or fget(mget(cx,y2),flg)then
 				return true
 			end
-			lp+=1
+			--lp+=1
 			cx+=1
 		end
 	end
-	lp=0
 	if ytl>1 then
-	--msg="ytl triggered: "..ytl
-		while lp!=ytl do
+		for lp=0,ytl do
 			if fget(mget(x1,cy),flg)
 			or fget(mget(x2,cy),flg)then
-					return true
+				return true
 			end
-			lp+=1
 			cy+=1
 		end
 	end
-		return false
+	log="cy: "..cy.." y2: "..y2.." ytl: "..ytl.." height: "..hbv.y2-hbv.y1
+	return false
 end
 --map collision
 function mpcol(obj,hbv)
@@ -446,8 +459,61 @@ function ismpcol(x1,y1,h,w)
 	or fget(mget(x2,y1),mflg)
 	or fget(mget(x2,y2),mflg)
 end
+
+function dist(fx,fy,tx,ty)
+	--f = from
+	--t = to
+	local dx,dy=fx-tx,fy-ty
+	--d = difference
+	--pythagoras theorem
+	return sqrt(dx^2+dy^2)
+end
 -->8
----food
+--vector
+function vector(x,y) return {x=x or 0,y=y or 0} end
+
+function v_polar(a,l) return vector(l*cos(a),l*sin(a)) end
+function v_rnd()      return v_polar(rnd(),1)          end
+function v_copy(v)    return vector(v.x,v.y) end
+function v_unpack(v)  return v.x, v.y end
+function v_tostr(v)   return "["..v.x..", "..v.y.."]" end
+
+function v_add(a,b)   return vector(a.x+b.x, a.y+b.y) end
+function v_sub(a,b)   return v_add(a, v_neg(b)) end
+function v_scale(v,n) return vector(v.x*n, v.y*n) end
+v_mul=v_scale
+function v_div(v,n)   return v_scale(v, 1/n) end
+function v_neg(v)     return v_scale(v, -1) end
+
+function v_dot(a,b)    return a.x*b.x+a.y*b.y end
+function v_magsq(v)    return v_dot(v,v) end
+function v_mag(v)      return sqrt(v_magsq(v)) end
+function v_distsq(a,b) return v_magsq(v_sub(b,a)) end
+function v_dist(a,b)   return sqrt(v_distsq(a,b)) end
+function v_norm(v)     return v_div(v,v_mag(v)) end
+function v_perp(v)     return vector(v.y, -v.x) end
+function v_dir(a,b)    return v_norm(v_sub(b,a)) end
+
+function v_proj(a,b)
+    return v_scale(a, v_dot(a,b)/v_magsq(a))
+end
+
+function v_angle(v)   return atan2(v.x,v.y)        end
+function v_rot(v,a)   return v_polar(a, v_mag(v))  end
+function v_rotby(v,a) return v_rot(v,v_angle(v)+a) end
+
+function v_lerp(a,b,t) return v_add(a,v_mul(v_sub(b,a),t)) end
+function v_flr(v) return vector(flr(v.x),flr(v.y)) end
+
+v_right = vector( 1, 0)
+v_left  = vector(-1, 0)
+v_down  = vector( 0, 1)
+v_up    = vector( 0,-1)
+
+v_one    = vector(1,1)
+v_center = vector(64,64)
+-->8
+--food
 
 --forage, food available to player
 function frgcon(h,w,pnt,ani)
@@ -575,29 +641,165 @@ function drwfrg()
 end
 -->8
 --enemies
+--n m e...
+	dirmap={
+		{x=-1, y=0},--left
+		{x=1, y=0},--right
+		{x=0, y=-1},--up
+		{x=0, y=1}--down
+	}--direction map
 nme={}
 nmemin=1
 
-function nmecon()
+function nmecon(
+	x,
+	y,
+	h,
+	w,
+	xv,
+	yv,
+	acc,
+	vmax,
+	lfst,
+	ani
+)
 	return {
-		x=0,
-		y=0,
-		h=0,
-		w=0,
-		w=0,
-		vx=0,
-		vy=0,
-		vmax=0,
-		lfst="",
-		ani=""
+		x=x,
+		y=y,
+		h=h,
+		w=w,
+		vx=vx,
+		vy=vy,
+		acc=acc,
+		vmax=vmax,
+		lfst=lfst,
+		ani=ani,
+		--ai
+		los=30,
+		interest_map={},
+		danger_map={},--danger
+		context_map={} --context map
 	}
 end
 
+function ininme()
+end
+
 function nmespwn()
+	local c = nmemin
+	if #nme < nmemin then
+		while c>0 do
+			local e = nmecon(
+				scenter-4,
+				112,
+				8,
+				8,
+				0,
+				0,
+				0.75,
+				3,
+				"ado",
+				0
+			)
+			add(nme, e)
+			c-=1
+		end
+	end
 end
+
+function nmeray(e)
+	for l=1,e.los do
+		local xr=e.y+(e.h*0.5)
+		local yr=e.x+(e.w*0.5)
+		local left=e.x
+		local right=e.x+e.w
+		local up=e.y
+		local down=e.y+e.h
+		log="e: "..e.h
+		if ismpcol(left, xr, e.h, e.w) then
+			e.danger_map[1]=5
+		else
+		pset(left,xr,6)
+			left-=1
+		end
+		if ismpcol(right, xr, e.h, e.w) then
+			e.danger_map[2]=5
+		else
+			pset(right,xr,6)
+			right+=1
+		end
+		if ismpcol(yr, up, e.h, e.w) then
+			e.danger_map[3]=5
+		else
+			pset(xr,up,6)
+			up-=1
+		end
+		if ismpcol(yr, down, e.h, e.w) then
+			e.danger_map[4]=5
+		else
+			pset(xr,down,6)
+			down+=1
+		end
+	end
+end
+
 function upnme()
+	for l=1,128 do
+
+	end
+	for e in all(nme) do
+		nmeray(e)
+		get_interest_map(e)
+		get_danger_map(e)
+		get_context_map(e)
+	end
+	nmespwn()
 end
+
 function drwnme()
+	for e in all(nme) do
+		rectfill(
+			e.x,
+			e.y,
+			e.x+e.w,
+			e.y+e.h,
+			4
+		)
+	end
+end
+
+nmemv={
+	idl={},
+	prsu={}
+}
+
+function get_interest_map(e)
+		e.interest_map={}
+	local char_v = v_sub(e, char)
+	char_v = v_norm(char_v)
+	local bv=0
+	local bi=1
+	for i=1, #dirmap do
+		local dot = v_dot(char_v, dirmap[i])
+		add(e.interest_map, dot)
+		if (dot>bv) bi,bv=i,dot
+	end
+end
+function get_danger_map(e)
+	e.danger_map={}
+	for m in all(dirmap) do
+		add(e.danger_map,0)
+	end
+end
+function get_context_map(e)
+	e.context_map={}
+	local bv=e.interest_map[1] - e.danger_map[1]
+	local bi=1
+	for i=1, #dirmap do
+		local v=e.interest_map[i] - e.danger_map[i]
+		add(e.context_map, v)
+		if (v>bv) bv,bi=v,i
+	end
 end
 -->8
 ---pathfinding
@@ -648,20 +850,3 @@ __gfx__
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-__map__
-2222222222222222222222222222222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222222222222222222222222222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222222222222222222222222222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222121212222222222222221222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222122222222222222222121222222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222122222222222222222121222222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222222222222222222212121222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222222222222222222222221222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2222222222222222222222222222222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000021220000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000021000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0021212100000000000000000021000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0021000000000000000000000021000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0021000000000000000000212121000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000212100000000000021210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
