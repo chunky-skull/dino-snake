@@ -107,7 +107,6 @@ function mvcon(--move constructor
 	return{
 		lbl=lbl,
 		update=function()
-			print(lbl)
 			char[vaxs]+=(char.acc*vdir)
 			char[vaxs]=vlimit(char[vaxs],char.vmax)
 			char.a = a
@@ -150,7 +149,6 @@ mvset={--move set states
 			if i!="idl" then
 				char.mv=mvset.mv[i]
 			else
-				print("idl")
 			end
 		end,
 		enter=function()
@@ -286,7 +284,6 @@ lfcy={
 --update lifecyle
 function uplfcy()
 	proglfcy()
-	print(lfcy.stg.lbl)
 end
 --initialize lifecyle
 function inilfcy()
@@ -627,7 +624,6 @@ end
 
 function drwfrg()
 	for f in all(frg) do
-		print(f.lbl,f.x,f.y,10)
 		spr(
 			f.ani,
 			f.x,
@@ -666,14 +662,14 @@ function nmecon(
 		y=y,
 		h=h,
 		w=w,
-		vx=vx,
-		vy=vy,
+		vx=0,
+		vy=0,
 		acc=acc,
 		vmax=vmax,
 		lfst=lfst,
 		ani=ani,
 		--ai
-		los=30,
+		los=60,
 		bi=1,
 		interest_map={},
 		danger_map={},--danger
@@ -691,12 +687,12 @@ function nmespwn()
 			local e = nmecon(
 				scenter-4,
 				112,
-				8,
-				8,
+				16,
+				16,
 				0,
 				0,
-				0.75,
-				3,
+				0.55,
+				2.5,
 				"ado",
 				0
 			)
@@ -713,7 +709,8 @@ function nmeray(e)
 		local right=e.x+e.w+1
 		local up=e.y-1
 		local down=e.y+e.h+1
-	for l=1,e.los do
+		e.danger_map={0,0,0,0}
+	for l=1,5 do
 		if ismpcol(left, xr, e.h, e.w) then
 			e.danger_map[1]=5
 		else
@@ -742,15 +739,11 @@ function nmeray(e)
 end
 
 function upnme()
-	for l=1,128 do
-
-	end
 	for e in all(nme) do
 		nmeray(e)
 		get_interest_map(e)
-		get_danger_map(e)
 		get_context_map(e)
-		nmewalk(e)
+		if (isnmeagro(e)) nmewalk(e)
 	end
 	nmespwn()
 end
@@ -764,7 +757,7 @@ function drwnme()
 			e.y+e.h,
 			4
 		)
-		log="e.bi: "..e.bi
+		--log="e.bi: "..e.bi
 	end
 end
 
@@ -774,21 +767,17 @@ nmemv={
 }
 
 function get_interest_map(e)
-		e.interest_map={}
-	local char_v = v_sub(char, e)
+	e.interest_map={}
+	local tv={
+		x=(char.x+(char.w*0.5))-(e.w*0.5),
+		y=(char.y+(char.h*0.5))-(e.h*0.5)
+	}
+	local char_v = v_sub(tv, e)
 	char_v = v_norm(char_v)
-	local bv=0
-	local bi=1
+	local bv,bi=0,1
 	for i=1, #dirmap do
 		local dot = v_dot(char_v, dirmap[i])
 		add(e.interest_map, dot)
-		if (dot>bv) bi,bv=i,dot
-	end
-end
-function get_danger_map(e)
-	e.danger_map={}
-	for m in all(dirmap) do
-		add(e.danger_map,0)
 	end
 end
 function get_context_map(e)
@@ -802,29 +791,43 @@ function get_context_map(e)
 	end
 	e.bi = bi
 end
-
+function isnmeagro(e)
+	return (
+		dist(
+			e.x+(e.w*0.5),
+			e.y+(e.h*0.5),
+			char.x+(char.w*0.5),
+			char.y+(char.h*0.5)
+		)
+		<e.los
+	)
+end
 function nmewalk(e)
-	local vel={x=0,y=0}
-	vel=v_add(vel,dirmap[e.bi])
-	--vel.x=vlimit(e.x,e.vmax)
-	--vel.y=vlimit(e.y,e.vmax)
-	--vel.x*=frc
-	--vel.y*=frc
-	e.x+=vel.x
-	e.y+=vel.y
+	local x,y=dirmap[e.bi].x,dirmap[e.bi].y
+	if(x>0)e.vx+=e.acc
+	if(x<0)e.vx-=e.acc
+	if(y>0)e.vy+=e.acc
+	if(y<0)e.vy-=e.acc
+	e.vx=vlimit(e.vx,e.vmax)
+	e.vy=vlimit(e.vy,e.vmax)
+	--local steering_force = desired_velocity - current_velocity
+	--steering_force = steering_force * VALUE
+	--higher value, sharper turns
+	--velocity = velocity + (steering_force * time())
+	mvsld(e)
 end
 -->8
 ---pathfinding
 
-function mkmap(d)
+function tbl2d(d,sd)
 	--d default value
+	--sd side length
 	local nmp={}--new map
-	if d==nil then
-		d=0
-	end
-	for x=0,15 do
+	if (d==nil) d=0
+	if (sd==nil) sd=15
+	for x=1,sd do
 		nmp[x]={}
-		for y=0,15 do
+		for y=1,sd do
 			nmp[x][y]=d
 		end
 	end
